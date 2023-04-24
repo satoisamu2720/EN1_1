@@ -49,5 +49,33 @@ public class GameManagerScript : MonoBehaviour
             }
             Debug.Log(debugText);
         }
+
+
+
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            int playerInbox = +1;
+            for (int i = 0; i < map.Length; i++)
+            {
+                if (map[i] == 1)
+                {
+                    playerInbox = i;
+                    break;
+
+                }
+            }
+            if (playerInbox < map.Length + 1)
+            {
+                map[playerInbox - 1] = 1;
+                map[playerInbox] = 0;
+
+            }
+            string debugText = "";
+            for (int i = 0; i < map.Length; i++)
+            {
+                debugText += map[i].ToString() + ",";
+            }
+            Debug.Log(debugText);
+        }
     }
 }
