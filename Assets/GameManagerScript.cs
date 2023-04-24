@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 public class GameManagerScript : MonoBehaviour
@@ -24,6 +25,15 @@ public class GameManagerScript : MonoBehaviour
             }
             return -1;
         }
+    }bool MoveNumber (int number,int moveFrom,int moveTo) 
+    {
+        if (moveTo < 0 || moveTo >= map.Length)
+        {
+            return false;
+        }
+        map[moveTo] = number;
+        map[moveFrom] = 0;
+        return true;
     }
 
     // Start is called before the first frame update
@@ -49,5 +59,29 @@ public class GameManagerScript : MonoBehaviour
                 map[PlayerIndex] = 0;
             }
             PrintArray();
+        }
+       if (Input.GetKeyUp(KeyCode.RightArrow))
+        {
+            int PlayerIndex = GetPlayerIndex();
+            MoveNumber(1,PlayerIndex,PlayerIndex+1);
+            PrintArray();
+
+        }
+        if (Input.GetKeyUp(KeyCode.LeftArrow))
+        {
+            int PlayerIndex = GetPlayerIndex();
+            if (PlayerIndex < map.Length + 1)
+            {
+                map[PlayerIndex - 1] = 1;
+                map[PlayerIndex] = 0;
+            }
+            PrintArray();
+        }
+        if (Input.GetKeyUp(KeyCode.RightArrow))
+        {
+            int PlayerIndex = GetPlayerIndex();
+            MoveNumber(1, PlayerIndex, PlayerIndex + 1);
+            PrintArray();
+
         }
     }
