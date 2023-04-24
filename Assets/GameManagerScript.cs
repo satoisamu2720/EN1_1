@@ -25,12 +25,18 @@ public class GameManagerScript : MonoBehaviour
             }
             return -1;
         }
-    }bool MoveNumber (int number,int moveFrom,int moveTo) 
+    }
+    bool MoveNumber (int number,int moveFrom,int moveTo) 
     {
-        if (moveTo < 0 || moveTo >= map.Length)
+        if (moveTo < 0 || moveTo >= map.Length) { return false; }
+
+        if (map[moveTo] == 2)
         {
-            return false;
+            int velovity = moveTo - moveFrom;
+            bool succsess = MoveNumber(2, moveTo, moveTo + velovity); 
+            if(!succsess) { return false; }
         }
+        
         map[moveTo] = number;
         map[moveFrom] = 0;
         return true;
@@ -41,7 +47,7 @@ public class GameManagerScript : MonoBehaviour
     {
         //Debug.Log("Hello world");
         string debugText = "";
-        map = new int[] { 0, 0, 0, 1, 0, 0, 0, 0, 0 };
+        map = new int[] { 0, 0, 0, 1, 0, 2, 0, 0, 0 };
         PrintArray();
       
         
