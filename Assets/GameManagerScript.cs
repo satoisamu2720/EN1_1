@@ -1,93 +1,159 @@
+using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 public class GameManagerScript : MonoBehaviour
 {
-    int[] map;
-    void PrintArray()
-    {
-        string debugText = "";
-        for (int i = 0; i < map.Length; i++)
-        {
-            debugText += map[i].ToString() + ",";
-        }
-        Debug.Log(debugText);
-    }
-    int GetPlayerIndex()
-    {
-        for (int i = 0; i < map.Length; i++)
-        {
-            if (map[i] == 1)
-            {
-                return i;
-            }
-            return -1;
-        }
-    }
-    bool MoveNumber (int number,int moveFrom,int moveTo) 
-    {
-        if (moveTo < 0 || moveTo >= map.Length) { return false; }
+    public GameObject playerPreFab;
+    public GameObject boxPreFab;
+    public GameObject areaPreFab;
+    public GameObject clearText;
 
-        if (map[moveTo] == 2)
+    int[,] map;
+    GameObject[,] field;
+
+    Vector2Int GetPlayerIndex()
+    {
+        for (int y = 0; y < field.GetLength(0); y++)
         {
-            int velovity = moveTo - moveFrom;
-            bool succsess = MoveNumber(2, moveTo, moveTo + velovity); 
-            if(!succsess) { return false; }
+            for (int x = 0; x < field.GetLength(1); x++)
+            {
+                if (field[y, x] == null) { continue; }
+                if (field[y, x].tag == "Player") { return new Vector2Int(x, y); }
+            }
         }
-        
-        map[moveTo] = number;
-        map[moveFrom] = 0;
+        return new Vector2Int(-1, -1);
+    }
+
+    bool MoveNumber(string tag, Vector2Int moveFrom, Vector2Int moveTo)
+    {
+        if (moveTo.y < 0 || moveTo.y >= field.GetLength(0)) { return false; }
+        if (moveTo.x < 0 || moveTo.x >= field.GetLength(1)) { return false; }
+
+        if (field[moveTo.y, moveTo.x] != null && field[moveTo.y, moveTo.x].tag == "Box")
+        {
+            Vector2Int velocity = moveTo - moveFrom;
+            bool success = MoveNumber(tag, moveTo, moveTo + velocity);
+            if (!success) { return false; }
+        }
+
+        field[moveFrom.y, moveFrom.x].transform.position =
+            new Vector3(moveTo.x, field.GetLength(0) - moveTo.y, 0);
+        field[moveTo.y, moveTo.x] = field[moveFrom.y, moveFrom.x];
+        field[moveFrom.y, moveFrom.x] = null;
         return true;
+    }
+
+    bool IsCleared()
+    {
+        List<Vector2Int> goals = new List<Vector2Int>();
+
+        for (int y = 0; y < map.GetLength(0); y++)
+        {
+            for (int x = 0; x < map.GetLength(1); x++)
+            {
+                if (map[y, x] == 3)
+                {
+                    goals.Add(new Vector2Int(x, y));
+                }
+            }
+        }
+
+        for (int i = 0; i < goals.Count; i++)
+        {
+            GameObject f = field[goals[i].y, goals[i].x];
+            if (f == null || f.tag != "Box")
+            {
+                return false;
+            }
+        }
+        return true;
+       
     }
 
     // Start is called before the first frame update
     void Start()
     {
-        //Debug.Log("Hello world");
-        string debugText = "";
-        map = new int[] { 0, 0, 0, 1, 0, 2, 0, 0, 0 };
-        PrintArray();
-      
-        
+        map = new int[,]
+        {
+            {0,0,0,0,0},
+            {0,3,0,2,3},
+            {0,2,1,0,0},
+            {0,0,2,0,0},
+            {0,0,0,3,0},
+        };
+
+        field = new GameObject
+        [
+            map.GetLength(0),
+            map.GetLength(1)
+        ];
+
+        for (int y = 0; y < map.GetLength(0); y++)
+        {
+            for (int x = 0; x < map.GetLength(1); x++)
+            {
+                if (map[y, x] == 1)
+                {
+                    field[y, x] = Instantiate(
+                        playerPreFab,
+                        new Vector3(x, map.GetLength(0) - y, 0),
+                        Quaternion.identity);
+                }
+
+                if (map[y, x] == 2)
+                {
+                    field[y, x] = Instantiate(
+                        boxPreFab,
+                        new Vector3(x, map.GetLength(0) - y, 0),
+                        Quaternion.identity);
+                }
+
+                if (map[y, x] == 3)
+                {
+                    field[y, x] = Instantiate(
+                        areaPreFab,
+                        new Vector3(x, map.GetLength(0) - y, 0),
+                        Quaternion.identity);
+                }
+            }
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
-       if (Input.GetKeyUp(KeyCode.RightArrow)) 
+        if (Input.GetKeyDown(KeyCode.RightArrow))
         {
-            int PlayerIndex = GetPlayerIndex();
-            if(PlayerIndex < map.Length-1)
-            {
-                map[PlayerIndex +1] = 1;
-                map[PlayerIndex] = 0;
-            }
-            PrintArray();
+            Vector2Int playerIndex = GetPlayerIndex();
+            MoveNumber("Player", playerIndex, playerIndex + new Vector2Int(1, 0));
         }
-       if (Input.GetKeyUp(KeyCode.RightArrow))
-        {
-            int PlayerIndex = GetPlayerIndex();
-            MoveNumber(1,PlayerIndex,PlayerIndex+1);
-            PrintArray();
 
-        }
-        if (Input.GetKeyUp(KeyCode.LeftArrow))
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
-            int PlayerIndex = GetPlayerIndex();
-            if (PlayerIndex < map.Length + 1)
-            {
-                map[PlayerIndex - 1] = 1;
-                map[PlayerIndex] = 0;
-            }
-            PrintArray();
+            Vector2Int playerIndex = GetPlayerIndex();
+            MoveNumber("Player", playerIndex, playerIndex + new Vector2Int(-1, 0));
         }
-        if (Input.GetKeyUp(KeyCode.RightArrow))
-        {
-            int PlayerIndex = GetPlayerIndex();
-            MoveNumber(1, PlayerIndex, PlayerIndex + 1);
-            PrintArray();
 
+        if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            Vector2Int playerIndex = GetPlayerIndex();
+            MoveNumber("Player", playerIndex, playerIndex + new Vector2Int(0, -1));
         }
+
+        if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            Vector2Int playerIndex = GetPlayerIndex();
+            MoveNumber("Player", playerIndex, playerIndex + new Vector2Int(0, 1));
+        }
+
+        if (IsCleared())
+        {
+            clearText.SetActive(true);
+        }
+        
     }
+}
